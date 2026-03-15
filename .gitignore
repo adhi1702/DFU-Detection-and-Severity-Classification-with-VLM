@@ -1,0 +1,90 @@
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# ── Virtual environments ──────────────────────────────────
+venv/
+env/
+ENV/
+.env
+*.env
+
+# ── Jupyter Notebook ──────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Model weights (too large for GitHub) ─────────────────
+outputs/best_model.pth
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.pkl
+
+# ── Dataset (too large for GitHub) ───────────────────────
+dataset/
+data/
+*.jpg
+*.jpeg
+*.bmp
+*.tiff
+*.tif
+
+# Allow evaluation plots in outputs/
+*.png
+!outputs/evaluation_visualization.png
+!outputs/training_curves.png
+!outputs/test_evaluation_plots.png
+!outputs/val_confusion_matrix.png
+
+# ── Output files ──────────────────────────────────────────
+outputs/best_model.pth
+results.json
+severity_results.json
+!package.json
+!package-lock.json
+
+# ── Node / Frontend ───────────────────────────────────────
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.cache/
+*.local
+
+# ── Vite ──────────────────────────────────────────────────
+frontend/dist/
+frontend/.cache/
+
+# ── OS files ──────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── VS Code ───────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Misc ──────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.idea/
