@@ -1,98 +1,149 @@
-# Diabetic Foot Ulcer (DFU) Binary Classifier
+# 🦶 PodoScan — Diabetic Foot Ulcer Detection & Severity Analysis
 
-A production-grade binary classifier that detects **ulcer vs non-ulcer** from wound images.
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c?style=flat-square&logo=pytorch)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi)
+![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479a1?style=flat-square&logo=mysql)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+> An end-to-end clinical AI system for automated detection and severity grading of Diabetic Foot Ulcers (DFU) from wound images, powered by deep learning and a Vision-Language Model assistant.
 
 ---
 
-## 📁 Expected Dataset Layout
+## Overview
 
+Diabetic Foot Ulcers (DFU) affect approximately 15% of all diabetic patients and are a leading cause of non-traumatic lower limb amputations worldwide. Early detection and accurate severity grading are critical for effective clinical intervention.
+
+**PodoScan** automates this process using a fine-tuned deep learning model combined with unsupervised image feature extraction — no severity labels required. An integrated LLM-powered clinical assistant answers medical questions about each wound in real time.
+
+### What it does
+
+| Step | Process | Output |
+|---|---|---|
+| 1 | Upload wound image | — |
+| 2 | Deep learning detection | Ulcer / Non-Ulcer + confidence % |
+| 3 | HSV feature extraction | Redness, darkness, slough, area, texture scores |
+| 4 | Weighted severity scoring | Mild / Moderate / Severe grade |
+| 5 | LLM clinical assistant | Natural language explanation + Q&A |
+| 6 | Database storage | All results saved to MySQL automatically |
+
+### Key Features
+
+- 🔍 **Binary Classification** — Ulcer vs Non-Ulcer with confidence score
+- 📊 **Severity Grading** — Automated Mild / Moderate / Severe assessment
+- 🎨 **Feature Extraction** — 5 clinical wound features extracted from image
+- 🤖 **Clinical AI Chat** — Streaming LLaMA 3.3 70B assistant with wound context
+- 📈 **Analytics Dashboard** — Real-time stats, history, severity distribution
+- 💾 **Auto Storage** — Every prediction saved directly to MySQL
+- 📱 **Responsive UI** — Works on desktop and mobile
+
+---
+
+## Model
+
+The detection model is built on **EfficientNetV2-S** pretrained on ImageNet-1K with a custom 2-class head:
 ```
-data/
-├── train/
-│   ├── ulcer/          (images)
-│   └── non_ulcer/      (images)
-├── val/
-│   ├── ulcer/
-│   └── non_ulcer/
-└── test/
-    ├── ulcer/
-    └── non_ulcer/
+EfficientNetV2-S Backbone (pretrained)
+        ↓
+Dropout(0.4) → Linear(in → 512) → SiLU → Dropout(0.3) → Linear(512 → 2)
 ```
 
-> ⚠️ Folder names must exactly match `CLASSES = ["non_ulcer", "ulcer"]` in `train.py`.
-> Edit the list to match your actual sub-folder names if different.
+**Training highlights:**
+- Loss — Label Smoothing Cross-Entropy + Class Weights
+- Optimiser — AdamW (lr=3e-4, weight_decay=1e-4)
+- Schedule — Linear Warmup (5 epochs) + Cosine Annealing
+- Augmentation — 15+ Albumentations transforms
+- Mixed Precision — PyTorch AMP
+- Early Stopping — patience=12
+- Inference — Test-Time Augmentation × 5
+
+**Dataset:**
+
+| Split | Images |
+|---|---|
+| Train | 1,016 |
+| Validation | 208 |
+| Test | 199 |
+| **Total** | **1,423** |
 
 ---
 
-## 🚀 Quick Start
+## Severity Analysis
 
-### 1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+Since no severity labels existed, an unsupervised feature-based approach grades detected ulcers:
 
-### 2. Train
-```bash
-python train.py
-```
+| Feature | Weight | Clinical meaning |
+|---|---|---|
+| Darkness | 30% | Necrosis / dead tissue |
+| Area Ratio | 25% | Wound size |
+| Redness | 20% | Active inflammation |
+| Yellow/Slough | 15% | Slough or pus presence |
+| Texture | 10% | Surface irregularity |
 
-### 3. Predict
-```bash
-# Single image
-python predict.py --source path/to/image.jpg
-
-# Entire folder
-python predict.py --source path/to/test_images/
-```
+| Grade | Score Range | Description |
+|---|---|---|
+| 🟢 Mild | 0.00 – 0.35 | Superficial wound, minimal tissue involvement |
+| 🟡 Moderate | 0.35 – 0.60 | Deeper wound with signs of inflammation or slough |
+| 🔴 Severe | 0.60 – 1.00 | Significant necrosis, large wound area, or deep tissue damage |
 
 ---
 
-## 🏗️ Architecture & Key Design Decisions
+## Tech Stack
 
-| Component | Choice | Why |
-|-----------|--------|-----|
-| **Backbone** | EfficientNetV2-S | Best accuracy/speed on medical imaging; strong ImageNet pretraining |
-| **Head** | Dropout → Linear(512) → SiLU → Dropout → Linear(2) | Reduces overfitting on small datasets |
-| **Loss** | Label Smoothing CE + Class Weights | Handles class imbalance, prevents overconfident predictions |
-| **Augmentation** | Albumentations (15+ ops) | Color, geometry, noise, dropout — crucial for medical images |
-| **LR Schedule** | Linear Warmup + Cosine Annealing | Stable convergence, avoids early divergence |
-| **Optimiser** | AdamW | Weight decay decoupled; better generalisation |
-| **Mixed Precision** | torch AMP | ~2× faster training, same accuracy |
-| **Inference** | TTA (×5 transforms) | Boosts precision/recall on unseen data |
-| **Early Stopping** | Patience = 12 | Prevents overfitting on small dataset |
+| Layer | Technology |
+|---|---|
+| Model | EfficientNetV2-S (PyTorch) |
+| Augmentation | Albumentations |
+| Backend | FastAPI + Uvicorn |
+| Frontend | React 18 + Vite |
+| Database | MySQL 8.0 |
+| Clinical AI | LLaMA 3.3 70B |
+| Charts | Recharts |
 
 ---
 
-## 📊 Outputs (saved in `./outputs/`)
+## Evaluation Results
 
-| File | Description |
-|------|-------------|
-| `best_model.pth` | Best checkpoint (lowest val loss) |
-| `training_curves.png` | Loss & accuracy curves |
-| `validation_confusion_matrix.png` | Val set confusion matrix |
-| `test_confusion_matrix.png` | Test set confusion matrix |
-| `roc_curve.png` | ROC-AUC curve |
-| `pr_curve.png` | Precision-Recall curve |
-| `results.json` | Full metrics: precision, recall, F1, support, ROC-AUC |
+The model was evaluated on the held-out test set of 199 images using TTA × 5.
 
----
+### Test Set Performance
 
-## ⚙️ Tuning Tips
+| Class | Precision | Recall | F1-Score | Support |
+|---|---|---|---|---|
+| non_ulcer | 1.0000 | 1.0000 | 1.0000 | 108 |
+| ulcer | 1.0000 | 1.0000 | 1.0000 | 100 |
+| **Macro Avg** | **1.0000** | **1.0000** | **1.0000** | **208** |
 
-- **More epochs / larger model** → Try `efficientnet_v2_m` for better accuracy at cost of speed
-- **Severe class imbalance** → Increase `label_smooth` or add focal loss
-- **Overfitting** → Increase dropout in `DFUModel`, reduce `lr`
-- **Underfitting** → Increase `lr`, reduce weight decay, reduce augmentation strength
-- **GPU OOM** → Reduce `batch_size` to 16 or 8
+| Metric | Score |
+|---|---|
+| Accuracy | 1.0000 |
+| Macro F1 | 1.0000 |
+| ROC-AUC | 1.0000 |
+| PR-AUC | 1.0000 |
 
 ---
 
-## 📈 Expected Performance (typical DFU datasets)
+### Training Curves
 
-| Metric | Expected Range |
-|--------|----------------|
-| Accuracy | 92–97% |
-| Ulcer Precision | 0.90–0.97 |
-| Ulcer Recall | 0.90–0.97 |
-| Ulcer F1 | 0.91–0.97 |
-| ROC-AUC | 0.95–0.99 |
+![Training Curves](outputs/training_curves.png)
+
+---
+
+### Full Evaluation Dashboard
+
+![Evaluation Dashboard](outputs/evaluation_visualization.png)
+
+---
+
+### ROC, PR Curve & Confusion Matrix
+
+![Test Evaluation Plots](outputs/test_evaluation_plots.png)
+
+---
+
+### Validation Confusion Matrix
+
+![Validation Confusion Matrix](outputs/val_confusion_matrix.png)
+
+---
