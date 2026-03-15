@@ -1,4 +1,4 @@
-# 🦶 PodoScan — Diabetic Foot Ulcer Detection & Severity Analysis
+# 🦶 PodoScan — Diabetic Foot Ulcer Detection & Severity Analysis with VLM Support
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c?style=flat-square&logo=pytorch)
