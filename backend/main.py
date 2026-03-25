@@ -29,8 +29,8 @@ WEIGHTS_PATH       = "../outputs/best_model.pth"
 CLASSES            = ["non_ulcer", "ulcer"]
 IMG_SIZE           = 224
 DEVICE             = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MILD_THRESHOLD     = 0.35
-MODERATE_THRESHOLD = 0.50
+MILD_THRESHOLD     = 0.25
+MODERATE_THRESHOLD = 0.40
 
 # ─── MySQL CONFIG ─────────────────────────────────────────
 DB_CONFIG = {
@@ -40,7 +40,7 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME")
 }
 
-# ─── Anthropic CLIENT ─────────────────────────────────────
+# ─── Groq CLIENT ──────────────────────────────────────────
 GROQ_API_KEY  = os.getenv("GROQ_API_KEY")
 groq_client   = Groq(api_key=GROQ_API_KEY)
 
@@ -252,7 +252,7 @@ def save_to_db(result: dict):
         return None
 
 
-# ─── Lifespan (replaces deprecated on_event) ──────────────
+# ─── Lifespan ─────────────────────────────────────────────
 dfu_model = None
 transform = None
 
@@ -268,9 +268,10 @@ app = FastAPI(title="DFU Detection API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173",
-                   "https://*.ngrok-free.app"
-                   ],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://*.ngrok-free.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -454,7 +455,6 @@ Current wound analysis results from the AI model:
     • Wound Area Ratio       : {round(r.get('area_ratio', 0) * 100, 1) if r.get('area_ratio') else 'N/A'}%
     • Texture Irregularity   : {round(r.get('texture', 0) * 100, 1) if r.get('texture') else 'N/A'}%"""
 
-    # Build messages for Groq
     groq_messages = [{"role": "system", "content": system_prompt}]
 
     for msg in req.messages:

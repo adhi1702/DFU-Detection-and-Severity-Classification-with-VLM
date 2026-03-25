@@ -269,7 +269,7 @@ function ChatPanel({ result }) {
         <span className="chat-icon">🤖</span>
         <div>
           <p className="chat-title">Clinical AI Assistant</p>
-          <p className="chat-sub">Powered by Claude</p>
+          <p className="chat-sub">Powered by PodoScan</p>
         </div>
         <div className={`chat-status ${result ? "active" : ""}`}>
           {result ? "● Active" : "● Waiting"}
@@ -461,8 +461,8 @@ export default function App() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="nav-brand">
-          <span className="nav-icon">🦶</span>
-          <span>DFU Analyser</span>
+          <img src="/foot.ico" alt="WoundSight" className="nav-icon" />
+          <span>PodoScan - Scan Your Ulcered Foot</span>
         </div>
         <div className="nav-tabs">
           <button

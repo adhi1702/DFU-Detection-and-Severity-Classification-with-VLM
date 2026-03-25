@@ -31,7 +31,7 @@ body {
   color: #38bdf8;
   letter-spacing: -0.02em;
 }
-.nav-icon { font-size: 1.4rem; }
+.nav-icon { width: 28px; height: 28px; object-fit: contain; }
 .nav-tabs { display: flex; gap: 0.4rem; }
 .nav-tab {
   padding: 0.38rem 0.9rem;
