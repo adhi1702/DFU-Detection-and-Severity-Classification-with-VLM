@@ -322,6 +322,102 @@ function ChatPanel({ result }) {
   )
 }
 
+// ── Read-only SQL assistant drawer ───────────────────────
+function SQLAssistantDrawer({ open, onClose }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState("")
+  const [busy, setBusy] = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const handleEscape = (event) => { if (event.key === "Escape") onClose() }
+    window.addEventListener("keydown", handleEscape)
+    return () => window.removeEventListener("keydown", handleEscape)
+  }, [open, onClose])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, open])
+
+  const sendMessage = async () => {
+    const question = input.trim()
+    if (!question || busy) return
+    const history = [...messages, { role: "user", content: question }]
+    setMessages([...history, { role: "assistant", content: "" }])
+    setInput("")
+    setBusy(true)
+    try {
+      const response = await fetch(`${API}/sql-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.detail || "The assistant could not answer.")
+      setMessages(prev => [...prev.slice(0, -1), {
+        role: "assistant",
+        content: payload.answer,
+        table: payload.columns?.length ? { columns: payload.columns, rows: payload.rows || [] } : null,
+      }])
+    } catch (error) {
+      setMessages(prev => [...prev.slice(0, -1), { role: "assistant", content: error.message || "Could not reach the SQL assistant." }])
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) return null
+  return (
+    <div className="sql-drawer-layer">
+      <button className="sql-drawer-backdrop" aria-label="Close SQL assistant" onClick={onClose} />
+      <section className="sql-drawer" role="dialog" aria-modal="true" aria-labelledby="sql-drawer-title">
+        <header className="sql-drawer-header">
+          <span className="sql-robot" aria-hidden="true">🤖</span>
+          <div className="sql-drawer-heading">
+            <h2 id="sql-drawer-title">Data Assistant</h2>
+            <p>Ask questions about application data</p>
+          </div>
+          <button className="sql-close" onClick={onClose} aria-label="Close assistant">×</button>
+        </header>
+        <div className="sql-messages" aria-live="polite">
+          {messages.length === 0 && <div className="sql-welcome">Ask a question about the data in this application. I can only read data.</div>}
+          {messages.map((message, index) => (
+            <div key={index} className={`sql-message ${message.role}`}>
+              <div>{message.content || (busy && index === messages.length - 1 ? "Querying the data…" : "")}</div>
+              {message.table && (
+                <div className="sql-result-table-wrap">
+                  <table className="sql-result-table">
+                    <thead><tr>{message.table.columns.map(column => <th key={column}>{column.replaceAll("_", " ")}</th>)}</tr></thead>
+                    <tbody>
+                      {message.table.rows.length
+                        ? message.table.rows.map((row, rowIndex) => (
+                            <tr key={rowIndex}>{message.table.columns.map(column => <td key={column}>{row[column] == null ? "—" : String(row[column])}</td>)}</tr>
+                          ))
+                        : <tr><td colSpan={message.table.columns.length}>No rows returned.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+        <form className="sql-composer" onSubmit={event => { event.preventDefault(); sendMessage() }}>
+          <textarea
+            aria-label="Ask a question about application data"
+            placeholder="e.g. How many scans were severe this month?"
+            value={input}
+            onChange={event => setInput(event.target.value)}
+            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage() } }}
+            rows={2}
+            disabled={busy}
+          />
+          <button className="chat-send" type="submit" disabled={!input.trim() || busy}>{busy ? "…" : "Send"}</button>
+        </form>
+      </section>
+    </div>
+  )
+}
+
 // ── Stats Bar ─────────────────────────────────────────────
 function StatsBar({ stats }) {
   if (!stats) return null
@@ -421,6 +517,7 @@ export default function App() {
   const [stats,       setStats]       = useState(null)
   const [loading,     setLoading]     = useState(false)
   const [tab,         setTab]         = useState("upload")
+  const [sqlAssistantOpen, setSqlAssistantOpen] = useState(false)
 
   const fetchAll = async () => {
     try {
@@ -473,8 +570,17 @@ export default function App() {
             className={`nav-tab ${tab === "dashboard" ? "active" : ""}`}
             onClick={() => { setTab("dashboard"); fetchAll() }}
           >📋 Dashboard</button>
+          <button
+            className="sql-assistant-trigger"
+            aria-label="Open data assistant"
+            aria-expanded={sqlAssistantOpen}
+            onClick={() => setSqlAssistantOpen(true)}
+            title="Ask questions about app data"
+          >🤖</button>
         </div>
       </nav>
+
+      <SQLAssistantDrawer open={sqlAssistantOpen} onClose={() => setSqlAssistantOpen(false)} />
 
       <main className="main">
         <StatsBar stats={stats} />

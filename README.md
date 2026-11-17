@@ -33,7 +33,7 @@ Diabetic Foot Ulcers (DFU) affect approximately 15% of all diabetic patients and
 - 🔍 **Binary Classification** — Ulcer vs Non-Ulcer with confidence score
 - 📊 **Severity Grading** — Automated Mild / Moderate / Severe assessment
 - 🎨 **Feature Extraction** — 5 clinical wound features extracted from image
-- 🤖 **Clinical AI Chat** — Streaming LLaMA 3.3 70B assistant with wound context
+- 🤖 **Clinical AI Chat** — Streaming Groq assistant with wound context
 - 📈 **Analytics Dashboard** — Real-time stats, history, severity distribution
 - 💾 **Auto Storage** — Every prediction saved directly to MySQL
 - 📱 **Responsive UI** — Works on desktop and mobile
@@ -98,8 +98,23 @@ Since no severity labels existed, an unsupervised feature-based approach grades 
 | Backend | FastAPI + Uvicorn |
 | Frontend | React 18 + Vite |
 | Database | MySQL 8.0 |
-| Clinical AI | LLaMA 3.3 70B |
+| Clinical AI | Groq-hosted GPT-OSS 120B by default (`GROQ_MODEL` can override) |
 | Charts | Recharts |
+
+### Read-only SQL assistant setup
+
+The dashboard data assistant uses the Groq key already configured in `backend/.env`, plus a separate MySQL account. Set `DB_USER` and `DB_PASSWORD` in that file for an account with `SELECT` access only to the application database. Do not reuse the application's regular database credentials for AI-generated queries.
+
+The default Groq model is `openai/gpt-oss-120b`. Set `GROQ_MODEL` in `backend/.env` to another model ID enabled for your Groq account if needed.
+
+For example, create a dedicated account in MySQL and grant it read access to the configured database (replace the placeholders with your database name, username, and a strong password):
+
+```sql
+CREATE USER 'podoscan_reader'@'localhost' IDENTIFIED BY '<strong-password>';
+GRANT SELECT ON `<database-name>`.* TO 'podoscan_reader'@'localhost';
+```
+
+For deployments where the backend connects from another host, change the MySQL account host to the backend's source host or an appropriately restricted network range. The assistant accepts only a single `SELECT` query, rejects known mutation and locking statements, limits results to 100 rows, and omits image payload columns from its schema context. MySQL grants remain the primary protection against writes.
 
 ---
 
